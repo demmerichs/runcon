@@ -1,0 +1,39 @@
+nature:
+  _TRANSFORM:
+    name: make_setlike_dict
+    targets: [non_living, living.animals]
+  non_living:
+  - rocks
+  - water
+  - air
+  living:
+    _TRANSFORM:
+    - name: remove_element
+      target: animals
+      key: 0
+    - name: remove_element
+      target: plants
+      key: tree
+    animals:
+    - dog
+    - cat
+    plants:
+      tree:
+        branches:
+          leaves: green
+        trunk: brown
+      appletree:
+        _TRANSFORM:
+        - make_keys_upper_case
+        branches:
+          leaves: green
+          fruits: apples
+        trunk: brown
+      oaktree:
+        _TRANSFORM:
+        - name: MAKE_KEYS_UPPER_CASE
+          recursive: False
+        branches:
+          leaves: green
+        trunk: white
+      algea: null

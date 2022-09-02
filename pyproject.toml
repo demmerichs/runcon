@@ -1,0 +1,97 @@
+# pyproject.toml
+
+[build-system]
+requires = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "runcon"
+version = "1.0.0"
+description = "Manage a multitude of runs through hierarchical configuration"
+readme = "README.md"
+authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+github@gmail.com" }]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+]
+keywords = [
+    "config",
+    "cfg",
+    "configuration",
+    "dict",
+    "dictionary",
+    "attribute",
+    "hierarchical",
+    "hierarchy",
+    "experiments",
+    "runs",
+    "deep learning",
+    "command line",
+    "organization",
+    "structure",
+]
+dependencies = [
+    "pyyaml",
+]
+requires-python = ">=3.7"  # dicts are insertion-ordered since then
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "build",
+    "bumpver",
+    "coverage",
+    "flake8",
+    "flake8-blind-except",
+    "flake8-bugbear",
+    "flake8-builtins",
+    "flake8-comprehensions",
+    "flake8-debugger",
+    "flake8-isort",
+    "flake8-quotes",
+    "flake8-string-format",
+    "ipython",
+    "isort",
+    "phmdoctest",
+    "pre-commit",
+    "pytest",
+    "twine",
+    "types-PyYAML",
+]
+
+[project.urls]
+GitHub = "https://github.com/demmerichs/runcon"
+
+[tool.bumpver]
+current_version = "1.0.0"
+version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
+commit_message = "bump version {old_version} -> {new_version}"
+commit = true
+tag = true
+push = true
+
+[tool.bumpver.file_patterns]
+"pyproject.toml" = [
+    'current_version = "{version}"',
+    'version = "{version}"',
+]
+"src/runcon/__init__.py" = [
+    '__version__ = "{version}"',
+]
+
+[tool.coverage.run]
+source = ['src']
+dynamic_context = 'test_function'
+
+[tool.isort]
+profile = 'black'
+
+[tool.pytest.ini_options]
+addopts = '-s -rA --doctest-modules'
+testpaths = ['tests']

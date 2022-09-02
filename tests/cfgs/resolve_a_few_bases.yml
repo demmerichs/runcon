@@ -1,0 +1,31 @@
+plants:
+  tree:
+    branches:
+      leaves: green
+    trunk: brown
+  appletree:
+    _BASE:
+    - plants.tree
+    - with_apples
+  oaktree:
+    _BASE:
+    - plants.tree
+    trunk: white
+
+with_apples:
+  branches:
+    fruits: apples
+
+pets: [dog, cat]
+
+nature:
+  non_living:
+  - rocks
+  - water
+  - air
+  living:
+    animals:
+      _BASE: pets
+    plants:
+      _BASE: plants
+      algea: null

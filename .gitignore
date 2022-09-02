@@ -1,0 +1,21 @@
+__pycache__
+.venv
+
+# IDE
+.vscode
+
+# `pip install -e .[dev]`
+*.egg-info
+
+# pytest
+.pytest_cache
+
+# coverage
+.coverage
+htmlcov
+
+# `python -m build`
+dist
+
+# phmdoctest
+autogen_phmdoctest

@@ -1,0 +1,32 @@
+_CFG_ID: ed4df1d3753957459ec8760ace5e6967
+
+num: 3
+
+str: update
+
+list:
+- 3
+- 4
+- 5
+
+seq:
+- 4
+- uiop: 3
+- 6
+
+dict:
+  asdf: 5
+
+bool: true
+
+alphadict:
+  b: a
+  a: b
+  D: D
+  c: c
+
+list_of_list:
+- - 1
+  - 2
+- - 3
+- 4
