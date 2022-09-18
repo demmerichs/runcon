@@ -214,7 +214,7 @@ class Config(AttrDict):
     def from_dir(cls, dirname: Union[str, Path], file_ending: str = ".cfg") -> Config:
         dirname = Path(dirname)
         files = dirname.glob("*" + file_ending)
-        key_file_dict = {f.stem: f for f in files}
+        key_file_dict = {f.stem: f for f in sorted(files)}
         return cls.from_key_file_dict(key_file_dict)
 
     @classmethod

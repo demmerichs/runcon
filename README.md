@@ -72,13 +72,13 @@ produces
 ```
 _CFG_ID: 705951e95af9b1f6cf314e0f96835349
 
-garden:
-  trees: 2
-  animals: 0
-
 forest:
   trees: 1000
   animals: 20
+
+garden:
+  trees: 2
+  animals: 0
 ```
 
 Another way to load multiple configuration files at once is by specifying all the files and their corresponding keys manually.
