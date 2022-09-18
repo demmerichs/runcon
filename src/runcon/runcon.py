@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import os
+import shutil
 import sys
 from collections import abc
 from copy import deepcopy
@@ -444,6 +445,35 @@ class Config(AttrDict):
             with dst.open("w") as fout:
                 fout.write(description)
 
+    @staticmethod
+    def dump_code_snapshot(path: Union[str, Path]):
+        path = Path(path)
+        dst = path / "snapshot"
+
+        if dst.exists():
+            raise ValueError("there already exists a code snapshot at %s" % dst)
+
+        repo_base = Path.cwd()
+        while not (repo_base / ".git").is_dir():
+            repo_base = repo_base.parent
+
+        shutil.copytree(repo_base, dst)
+        cwd = Path.cwd()
+        os.chdir(dst)
+        os.system("git clean -Xdf")
+
+        dst_githist = dst / ".githistory"
+        if dst_githist.exists():
+            raise ValueError("the snapshot already contains a '.githistory'")
+        dst_githist.mkdir()
+        os.system(
+            "git log --oneline --no-decorate --no-abbrev-commit"
+            " > .githistory/gitlog.txt"
+        )
+        os.system("git remote -v > .githistory/gitremotes.txt")
+        shutil.rmtree(dst / ".git")
+        os.chdir(cwd)
+
     def get_cfg_path(self) -> Path:
         if self._initialized_path is None:
             raise ValueError(
@@ -459,6 +489,7 @@ class Config(AttrDict):
         exist_ok: bool = True,
         timestamp: Union[str, bool] = False,
         dump_command: bool = True,
+        dump_code: bool = False,
         verbose: bool = False,
     ) -> Path:
         """Create and return path based on the hash of this config.
@@ -503,6 +534,8 @@ class Config(AttrDict):
         self.dump_cfg(dirname.with_suffix(".cfg"), exist_ok=exist_ok)
         if dump_command:
             Config.dump_command(stamped_dirname)
+        if dump_code:
+            Config.dump_code_snapshot(stamped_dirname)
         self.set_attribute("_initialized_path", stamped_dirname)
         if self._description is not None:
             self.create_description_symlink(dirname, self._description)
