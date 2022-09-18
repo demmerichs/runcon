@@ -2,11 +2,10 @@ import hashlib
 import re
 from collections import abc
 from datetime import datetime
-from types import NoneType
 from typing import Union
 
 Numeric = Union[int, float, complex]
-Scalar = Union[Numeric, str, bool, NoneType]
+Scalar = Union[Numeric, str, bool, None]
 Struct = Union[Scalar, abc.Mapping, abc.Sequence]
 FILENAME_SANITIZER_PATTERN = re.compile("[^A-Za-z0-9_.]")
 
