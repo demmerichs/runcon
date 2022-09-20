@@ -38,6 +38,7 @@ keywords = [
 ]
 dependencies = [
     "pyyaml",
+    "typing_extensions",
 ]
 requires-python = ">=3.7"  # dicts are insertion-ordered since then
 
