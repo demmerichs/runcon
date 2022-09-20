@@ -363,6 +363,7 @@ list_of_list:
     cfg1_temp.initialize_cfg_path(
         "/tmp/Config_test",
         timestamp=True,
+        dump_code=True,
     )
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
