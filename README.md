@@ -277,12 +277,12 @@ After creating your run configuration in your script, it is time to create a dir
 
 <!--phmdoctest-share-names-->
 ```python
-cfg_dir = cfg.initialize_cfg_path(base_path="/tmp", timestamp=False)
+cfg_dir = cfg.initialize_cfg_path(base_path="/tmp/Config_test", timestamp=False)
 print(type(cfg_dir), cfg_dir)
 ```
 produces
 ```
-<class 'pathlib.PosixPath'> /tmp/8614010d20024c05f815cc8edcc8982f
+<class 'pathlib.PosixPath'> /tmp/Config_test/8614010d20024c05f815cc8edcc8982f
 ```
 
 The path mainly consists of two parts, a time stamp allowing you to store multiple runs with the same configuration (if you specify `timestampe=True`), and a hash produced by the configuration. Assuming hash collisions are too rare to be ever a problem, two configurations that differ somehow, will always produce different hashes. The hash is used, as it only depends on the configuration, whereas the automatic labeling depends also on the base configuration. The previous section demonstrated, how a change in the base configurations can produce a change in the automatic label. The `initialize_cfg_path` routine also produces a `description` folder next to the configuration folders, where symlinks are stored to the configuration folders, but with the automatic labels. This ensures, that the symlinks can easily be recreated based on a changed configuration, without the need to touch the actual run directories.
