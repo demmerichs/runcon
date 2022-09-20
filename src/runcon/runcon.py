@@ -372,8 +372,10 @@ class Config(AttrDict):
 
     def __str__(self):
         add_dump_info = {Config.CFG_ID_TOKEN: self.get_cfg_id()}
+        dump_dict = add_dump_info
+        dump_dict.update(self)
         return yaml.safe_dump(
-            add_dump_info | self,
+            dump_dict,
             default_flow_style=False,
             sort_keys=False,
         )
