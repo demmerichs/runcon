@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import os
 import sys
 from collections import abc
 from copy import deepcopy
@@ -415,10 +416,10 @@ class Config(AttrDict):
                     "destination '%s' for description symlink already exists but is not"
                     " a symlink" % dst
                 )
-            if dst.readlink() != src:
+            if Path(os.readlink(dst)) != src:
                 raise EnvironmentError(
                     "destination '%s' for description symlink already exists, but is"
-                    " linked to a different target '%s'" % (dst, dst.readlink())
+                    " linked to a different target '%s'" % (dst, Path(os.readlink(dst)))
                 )
             return
         dst.symlink_to(src)
