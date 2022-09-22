@@ -2,6 +2,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI Stats: downloads](https://img.shields.io/pypi/dm/runcon.svg)](https://github.com/demmerichs/runcon)
 [![pre-commit](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml)
+[![Python Version](https://img.shields.io/pypi/pyversions/runcon)](https://github.com/demmerichs/runcon)
 
 # runcon <!-- omit in toc -->
 
