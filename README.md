@@ -4,6 +4,7 @@
 [![pre-commit](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml)
 [![Python Version](https://img.shields.io/pypi/pyversions/runcon)](https://github.com/demmerichs/runcon)
 [![Package Version](https://img.shields.io/pypi/v/runcon)](https://pypi.org/project/runcon)
+[![Package Status](https://img.shields.io/pypi/status/runcon)](https://github.com/demmerichs/runcon)
 
 # runcon <!-- omit in toc -->
 
