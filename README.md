@@ -1,6 +1,7 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![PyPI Stats: downloads](https://img.shields.io/pypi/dm/runcon.svg)](https://github.com/demmerichs/runcon)
+[![pre-commit](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml)
 
 # runcon <!-- omit in toc -->
 
