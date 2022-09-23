@@ -28,20 +28,30 @@ jobs:
         run: |
           mkdir -p test_coverage_result/${{ matrix.python-version }}
           coverage run --branch -m pytest \
-            | python -c \
-              "import sys; \
-              data = sys.stdin.readlines()[-1].replace(',', '').split(); \
-              data={k.upper():int(data[data.index(k)-1]) \
-                if k in data else 0 for k in ['passed','failed']}; \
-              print(data)" \
-            > test_coverage_result/${{ matrix.python-version }}/test_results.txt
+            | tee ${{ runner.temp }}/pytest_log.txt
+          python -c \
+            "import sys; \
+            data = sys.stdin.readlines()[-1].replace(',', '').split(); \
+            data={k.upper():int(data[data.index(k)-1]) \
+              if k in data else 0 for k in ['passed','failed']}; \
+            print(data)" \
+          < ${{ runner.temp }}/pytest_log.txt \
+          > test_coverage_result/${{ matrix.python-version }}/test_results.txt
+      - name: Report coverage
+        run: |
+          coverage report \
+            | tee ${{ runner.temp }}/coverage_report.txt
+          python -c \
+            "import sys; \
+            coverage = sys.stdin.readlines()[-1].split()[-1]; \
+            print(coverage)" \
+          < ${{ runner.temp }}/coverage_report.txt \
+          > test_coverage_result/${{ matrix.python-version }}/coverage_result.txt
       - name: Upload test and coverage result
         uses: actions/upload-artifact@v3
         with:
           name: test_coverage_result
           path: test_coverage_result
-      - name: Report coverage
-        run: coverage report
 
   badge_creation:
     runs-on: ubuntu-latest
@@ -55,7 +65,7 @@ jobs:
           python-version: "3.10"
       - uses: actions/download-artifact@v3
       - name: Aggregate test results
-        run: python .github/workflows/aggregate_test_results.py test_coverage_result >> $GITHUB_ENV
+        run: python .github/workflows/aggregate_test_coverage_results.py test_coverage_result >> $GITHUB_ENV
       - name: Create Test Badge
         uses: schneegans/dynamic-badges-action@v1.4.0
         with:
@@ -65,6 +75,17 @@ jobs:
           label: tests
           message: ${{ env.TESTS_PASSED }} passed, ${{ env.TESTS_FAILED }} failed
           color: ${{ env.TESTS_COLOR }}
+      - name: Create Coverage Badge
+        uses: schneegans/dynamic-badges-action@v1.4.0
+        with:
+          auth: ${{ secrets.DYNAMICBADGE_GISTSECRET }}
+          gistID: 7e5c41da825c828d7db05e41cdaf5bc2
+          filename: coverage_badge.json
+          label: coverage
+          message: ${{ env.COVERAGE }}%
+          valColorRange: ${{ env.COVERAGE }}
+          maxColorRange: 100
+          minColorRange: 0
       - name: Check all tests completed
         if: env.TESTS_FAILED != 0
         uses: actions/github-script@v3

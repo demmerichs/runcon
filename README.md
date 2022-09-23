@@ -6,6 +6,7 @@
 [![Package Version](https://img.shields.io/pypi/v/runcon)](https://pypi.org/project/runcon)
 [![Package Status](https://img.shields.io/pypi/status/runcon)](https://github.com/demmerichs/runcon)
 [![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/demmerichs/7e5c41da825c828d7db05e41cdaf5bc2/raw/test_badge.json)](https://github.com/demmerichs/runcon/actions/workflows/test_coverage.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/demmerichs/7e5c41da825c828d7db05e41cdaf5bc2/raw/coverage_badge.json)](https://github.com/demmerichs/runcon/actions/workflows/test_coverage.yml)
 
 # runcon <!-- omit in toc -->
 
