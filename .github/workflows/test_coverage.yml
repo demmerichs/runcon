@@ -25,6 +25,49 @@ jobs:
           mkdir tests/autogen_phmdoctest
           phmdoctest README.md --outfile tests/autogen_phmdoctest/test_readme.py
       - name: Test with pytest and coverage.py
-        run: coverage run --branch -m pytest
+        run: |
+          mkdir -p test_coverage_result/${{ matrix.python-version }}
+          coverage run --branch -m pytest \
+            | python -c \
+              "import sys; \
+              data = sys.stdin.readlines()[-1].replace(',', '').split(); \
+              data={k.upper():int(data[data.index(k)-1]) \
+                if k in data else 0 for k in ['passed','failed']}; \
+              print(data)" \
+            > test_coverage_result/${{ matrix.python-version }}/test_results.txt
+      - name: Upload test and coverage result
+        uses: actions/upload-artifact@v3
+        with:
+          name: test_coverage_result
+          path: test_coverage_result
       - name: Report coverage
         run: coverage report
+
+  badge_creation:
+    runs-on: ubuntu-latest
+    needs: testreport
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - uses: actions/download-artifact@v3
+      - name: Aggregate test results
+        run: python .github/workflows/aggregate_test_results.py test_coverage_result >> $GITHUB_ENV
+      - name: Create Test Badge
+        uses: schneegans/dynamic-badges-action@v1.4.0
+        with:
+          auth: ${{ secrets.DYNAMICBADGE_GISTSECRET }}
+          gistID: 7e5c41da825c828d7db05e41cdaf5bc2
+          filename: test_badge.json
+          label: tests
+          message: ${{ env.TESTS_PASSED }} passed, ${{ env.TESTS_FAILED }} failed
+          color: ${{ env.TESTS_COLOR }}
+      - name: Check all tests completed
+        if: env.TESTS_FAILED != 0
+        uses: actions/github-script@v3
+        with:
+          script: |
+              core.setFailed('Some tests failed!')
