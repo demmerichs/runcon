@@ -1,4 +1,12 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![PyPI Stats: downloads](https://img.shields.io/pypi/dm/runcon.svg)](https://pypi.org/project/runcon)
+[![pre-commit](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml/badge.svg)](https://github.com/demmerichs/runcon/actions/workflows/pre-commit.yml)
+[![Python Version](https://img.shields.io/pypi/pyversions/runcon)](https://github.com/demmerichs/runcon)
+[![Package Version](https://img.shields.io/pypi/v/runcon)](https://pypi.org/project/runcon)
+[![Package Status](https://img.shields.io/pypi/status/runcon)](https://github.com/demmerichs/runcon)
+[![Tests](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/demmerichs/7e5c41da825c828d7db05e41cdaf5bc2/raw/test_badge.json)](https://github.com/demmerichs/runcon/actions/workflows/test_coverage.yml)
+[![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/demmerichs/7e5c41da825c828d7db05e41cdaf5bc2/raw/coverage_badge.json)](https://github.com/demmerichs/runcon/actions/workflows/test_coverage.yml)
 
 # runcon <!-- omit in toc -->
 

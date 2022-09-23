@@ -23,6 +23,7 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
 ]
 keywords = [
     "config",
