@@ -132,7 +132,13 @@ class Config(AttrDict):
                 "This Config was already finalized! "
                 "Deleting attribute or item with name %s failed!" % str(args[0])
             )
-        super().__delitem__(*args, **kwargs)
+
+        key = args[0]
+        if isinstance(key, str) and "." in key:
+            first, *others = key.split(".")
+            return self[first].__delitem__(".".join(others), *args[1:], **kwargs)
+
+        return super().__delitem__(*args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
         if self._finalized:
