@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import ast
 import os
 import shutil
@@ -133,7 +134,13 @@ class Config(AttrDict):
                 "This Config was already finalized! "
                 "Deleting attribute or item with name %s failed!" % str(args[0])
             )
-        super().__delitem__(*args, **kwargs)
+
+        key = args[0]
+        if isinstance(key, str) and "." in key:
+            first, *others = key.split(".")
+            return self[first].__delitem__(".".join(others), *args[1:], **kwargs)
+
+        return super().__delitem__(*args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
         if self._finalized:
@@ -189,6 +196,73 @@ class Config(AttrDict):
                 "the loaded config contains a CFG_ID '%s' which is not compatible to"
                 " the rest of the config '%s'" % (cfg_id_in_file, self.get_cfg_id())
             )
+
+    @classmethod
+    def add_cli_parser(
+        cls,
+        parser: argparse.ArgumentParser,
+        base_cfgs: Config,
+        dest: str = "config",
+        name: Union[str, Sequence[str]] = ("-c", "--config"),
+        set_name: Union[str, Sequence[str]] = ("-s", "--set"),
+        unset_name: Union[str, Sequence[str]] = ("-u", "--unset"),
+    ):
+        group = parser.add_argument_group(dest)
+
+        class ConfigAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                for cfg_name in values:
+                    getattr(namespace, self.dest).rupdate(base_cfgs[cfg_name])
+
+        class ConfigSetAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                N = len(values) // 2
+                assert len(values) == 2 * N
+
+                for k, v in zip(values[::2], values[1::2]):
+                    try:
+                        getattr(namespace, self.dest)[k] = ast.literal_eval(v)
+                    except ValueError:
+                        getattr(namespace, self.dest)[k] = v
+
+        class ConfigUnsetAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                for k in values:
+                    del getattr(namespace, self.dest)[k]
+
+        name = [name] if isinstance(name, str) else name
+        group.add_argument(*name, action=ConfigAction, nargs="+", dest=dest)
+        set_name = [set_name] if isinstance(set_name, str) else set_name
+        group.add_argument(*set_name, action=ConfigSetAction, nargs="+", dest=dest)
+        unset_name = [unset_name] if isinstance(unset_name, str) else unset_name
+        group.add_argument(*unset_name, action=ConfigUnsetAction, nargs="+", dest=dest)
 
     @classmethod
     def from_file(cls, filename: Union[str, Path]) -> Config:

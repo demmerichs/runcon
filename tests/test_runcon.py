@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from copy import deepcopy
 from math import inf, pi
 from pathlib import Path
@@ -11,7 +12,7 @@ from runcon import Config
 from runcon.utils import get_time_stamp
 
 
-def test_finalization_of_Config():
+def test_finalization_of_config():
     cfg = Config({"b": 3, "a": 2 + 3j, "c": [3, "asdf", {"cool": inf}]})
     cfg.finalize()
 
@@ -76,7 +77,7 @@ d: null
     )
 
 
-def test_cfg_id_of_Config():
+def test_cfg_id_of_config():
     cfg1 = Config({"a": 3, "b": {"d": None, "c": "c"}, "c": "c"})
     cfg2 = Config({"a": "hi", "b": {"d": 3, "c": "c"}, "c": pi})
     cfg3 = Config({"b": {"c": None, "d": None}, "a": None, "c": None})
@@ -127,7 +128,7 @@ c: c
     assert cfg1_repr == str(cfg1)
 
 
-def test_deep_copy_of_Config():
+def test_deep_copy_of_config():
     cfg1 = Config(num=3, list=[1, 2, 3])
     cfg1.finalize()
 
@@ -137,7 +138,7 @@ def test_deep_copy_of_Config():
     assert err.value.args[0] == "'tuple' object does not support item assignment"
 
 
-def test_invalid_keys_of_Config():
+def test_invalid_keys_of_config():
     with pytest.raises(ValueError) as err:
         Config(finalize="asdf")
     assert (
@@ -182,7 +183,7 @@ def test_cfg_hashes():
     assert h1 != h3
 
 
-def test_file_loading_of_Config():
+def test_file_loading_of_config():
     with pytest.raises(FileNotFoundError) as err:
         Config.from_file(Path("tests/cfgs/does_not_exist.yml"))
     assert (
@@ -200,7 +201,7 @@ def test_file_loading_of_Config():
     Config.from_file(Path("tests/cfgs/correct_cfg_id.yml"))
 
 
-def test_base_resolving_of_Config():
+def test_base_resolving_of_config():
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_bases.yml"))
     assert """_CFG_ID: eb34e5b5e991a59bc9871573a76bd55e
 
@@ -256,7 +257,7 @@ nature:
     )
 
 
-def test_transform_resolving_of_Config():
+def test_transform_resolving_of_config():
     def remove_element():
         return "dummy"
 
@@ -294,8 +295,8 @@ nature:
     )
 
 
-def test_a_lot_of_functionality_of_Config():
-    # test Config recursive update
+def test_a_lot_of_functionality_of_config():
+    # test config recursive update
     cfg1 = Config(
         num=3,
         str="asdf",
@@ -361,17 +362,52 @@ list_of_list:
     cfg1.set_description("cfg1")
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=True,
         dump_code=True,
     )
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=get_time_stamp(include_micros=False),
     )
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=get_time_stamp(include_date=False),
+    )
+
+
+def test_argparse_config():
+    parser = argparse.ArgumentParser()
+    base_cfgs = Config.from_file("tests/cfgs/resolve_a_few_bases.yml")
+    Config.add_cli_parser(parser, base_cfgs)
+    args = parser.parse_args(
+        "--config nature with_apples"
+        " --set planets ['Mercury','Venus','Earth','Mars',"
+        "'Jupiter','Saturn','Uranus','Neptune']"
+        " branches.fruits pears"
+        " --unset living.plants non_living".split()
+    )
+    assert """_CFG_ID: d75ffd508e287912cdf17a05271e95e3
+
+living:
+  animals:
+  - dog
+  - cat
+
+branches:
+  fruits: pears
+
+planets:
+- Mercury
+- Venus
+- Earth
+- Mars
+- Jupiter
+- Saturn
+- Uranus
+- Neptune
+""" == str(
+        args.config
     )
