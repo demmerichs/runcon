@@ -1,6 +1,8 @@
 import re
 from collections import abc
 
+from frozendict import frozendict
+
 VARIABLE_NAME_PATTERN = re.compile("[a-zA-Z_][a-zA-Z_0-9]*")
 
 
@@ -65,3 +67,14 @@ class AttrDict(dict):
             return {k: AttrDict.todict(v) for k, v in nested_struct.items()}
         else:
             return nested_struct
+
+
+class FrozenAttrDict(frozendict):
+    def __getattribute__(self, *args, **kwargs):
+        try:
+            return super().__getattribute__(*args, **kwargs)
+        except AttributeError:
+            if args[0] in self.keys():
+                return super().__getitem__(*args, **kwargs)
+
+            raise AttributeError("FrozenAttrDict has no key %s" % args[0])
