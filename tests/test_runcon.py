@@ -48,7 +48,10 @@ c:
 
     with pytest.raises(TypeError) as err:
         cfg["c"][2]["cool"] = pi
-    assert err.value.args[0] == "'mappingproxy' object does not support item assignment"
+    assert (
+        err.value.args[0] == "'FrozenAttrDict' object does not support item assignment"
+    )
+    assert cfg["c"][2].cool == inf
 
     with pytest.raises(TypeError) as err:
         del cfg["c"][1]

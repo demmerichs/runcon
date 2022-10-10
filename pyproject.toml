@@ -42,6 +42,7 @@ keywords = [
     "structure",
 ]
 dependencies = [
+    "frozendict",
     "pyyaml",
     "typing_extensions",
 ]

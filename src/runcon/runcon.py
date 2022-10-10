@@ -7,13 +7,12 @@ import sys
 from collections import abc
 from copy import deepcopy
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any, Callable, Dict, Mapping, Sequence, Tuple, Union
 
 import yaml
 from typing_extensions import get_args, get_origin
 
-from .attrdict import AttrDict, is_mapping
+from .attrdict import AttrDict, FrozenAttrDict, is_mapping
 from .utils import Scalar, Struct, get_time_stamp, hash_string, sanitize_filename
 
 
@@ -77,7 +76,7 @@ class Config(AttrDict):
                 for k, v in struct.items()  # type: ignore[union-attr]
             }
             if final:
-                return MappingProxyType(mapping)
+                return FrozenAttrDict(mapping)
             else:
                 return mapping
 
