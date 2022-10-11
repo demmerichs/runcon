@@ -530,7 +530,7 @@ class Config(AttrDict):
         while not (repo_base / ".git").is_dir():
             repo_base = repo_base.parent
 
-        shutil.copytree(repo_base, dst)
+        shutil.copytree(repo_base, dst, symlinks=True)
         cwd = Path.cwd()
         os.chdir(dst)
         os.system("git clean -Xdf")
