@@ -272,6 +272,7 @@ def test_transform_resolving_of_config():
     )
 
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
+    cfg.resolve_transforms()
     assert """_CFG_ID: 9ce64f4ea2b95bf2f5206728eefd2c1a
 
 nature:
