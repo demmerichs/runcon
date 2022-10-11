@@ -222,6 +222,8 @@ class Config(AttrDict):
                 for cfg_name in values:
                     getattr(namespace, self.dest).rupdate(base_cfgs[cfg_name])
 
+                getattr(namespace, self.dest).resolve_transforms()
+
         class ConfigSetAction(argparse.Action):
             def __call__(
                 self,
@@ -264,16 +266,17 @@ class Config(AttrDict):
         group.add_argument(*unset_name, action=ConfigUnsetAction, nargs="+", dest=dest)
 
     @classmethod
-    def from_file(cls, filename: Union[str, Path]) -> Config:
+    def _load_file(cls, filename: Union[str, Path]) -> Config:
         filename = Path(filename)
-
         with filename.open() as f:
             cfg = Config(yaml.safe_load(f))
-
         cfg._resolve_cfg_id_after_file_loading()
-        cfg.resolve_base_cfgs()
-        cfg.resolve_transforms()
+        return cfg
 
+    @classmethod
+    def from_file(cls, filename: Union[str, Path]) -> Config:
+        cfg = cls._load_file(filename)
+        cfg.resolve_base_cfgs()
         return cfg
 
     @classmethod
@@ -290,13 +293,9 @@ class Config(AttrDict):
         cfg = Config()
 
         for k, fname in key_file_dict.items():
-            fname = Path(fname)
-            with fname.open() as f:
-                cfg[k] = Config(yaml.safe_load(f))
-                cfg[k]._resolve_cfg_id_after_file_loading()
+            cfg[k] = cls._load_file(fname)
 
         cfg.resolve_base_cfgs()
-        cfg.resolve_transforms()
 
         return cfg
 
@@ -305,6 +304,8 @@ class Config(AttrDict):
         ans = deepcopy(self[cfg_chain[0]])
         for cfg_name in cfg_chain[1:]:
             ans.rupdate(self[cfg_name])
+
+        ans.resolve_transforms()
 
         if kv is None:
             return ans
@@ -623,7 +624,8 @@ class Config(AttrDict):
     ):
         if start_cfg is None:
             start_cfg = Config()
-        sdiff = start_cfg.diff(self)
+        start_cfg_transform_resolved = deepcopy(start_cfg).resolve_transforms()
+        sdiff = start_cfg_transform_resolved.diff(self)
         struct_diff, old_diff, new_diff = sdiff.diff_count()
         next_iter_cfgs = [
             (
@@ -636,7 +638,8 @@ class Config(AttrDict):
         for bname, bcfg in base_cfgs.items():
             cfg = deepcopy(start_cfg)
             cfg.rupdate(bcfg)
-            cdiff = cfg.diff(self)
+            cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
+            cdiff = cfg_transform_resolved.diff(self)
             struct_diff, old_diff, new_diff = cdiff.diff_count()
             next_iter_cfgs.append(
                 (
@@ -678,7 +681,7 @@ class ConfigDiff(Config):
     class Nothing:
         pass
 
-    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Config):
+    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Union[Config, Struct]):
         super().__init__()
         self.set_attribute("_ConfigDiff__leaf", False)
 
@@ -700,6 +703,11 @@ class ConfigDiff(Config):
             self.set_old(cfg_old)
             self.set_new(cfg_new)
             return
+
+        assert isinstance(cfg_old, Config)
+        assert isinstance(cfg_new, Config)
+        cfg_old = deepcopy(cfg_old).finalize()
+        cfg_new = deepcopy(cfg_new).finalize()
 
         # create all_keys list in this manner to preserve order
         all_keys = list(cfg_old)
