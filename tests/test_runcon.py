@@ -414,3 +414,21 @@ planets:
 """ == str(
         args.config
     )
+
+
+def test_diff_of_finalized_vs_unfinalized_config():
+    cfg = Config(
+        {
+            "list_of_dicts": [{"a": 3}, {"b": 1}, {"c": 4}],
+        }
+    )
+    cfg_unfinalized = cfg
+    cfg_finalized = deepcopy(cfg).finalize()
+    assert """_CFG_ID: 8a80554c91d9fca8acb82f023de02f11
+""" == str(
+        cfg_unfinalized.diff(cfg_finalized)
+    )
+    assert """_CFG_ID: 8a80554c91d9fca8acb82f023de02f11
+""" == str(
+        cfg_finalized.diff(cfg_unfinalized)
+    )

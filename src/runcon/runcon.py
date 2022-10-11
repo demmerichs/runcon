@@ -648,7 +648,7 @@ class ConfigDiff(Config):
     class Nothing:
         pass
 
-    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Config):
+    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Union[Config, Struct]):
         super().__init__()
         self.set_attribute("_ConfigDiff__leaf", False)
 
@@ -670,6 +670,11 @@ class ConfigDiff(Config):
             self.set_old(cfg_old)
             self.set_new(cfg_new)
             return
+
+        assert isinstance(cfg_old, Config)
+        assert isinstance(cfg_new, Config)
+        cfg_old = deepcopy(cfg_old).finalize()
+        cfg_new = deepcopy(cfg_new).finalize()
 
         # create all_keys list in this manner to preserve order
         all_keys = list(cfg_old)
