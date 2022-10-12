@@ -30,6 +30,7 @@ class Config(AttrDict):
     BASE_CFG_TOKEN = "_BASE"
     TRANSFORM_CFG_TOKEN = "_TRANSFORM"
     CFG_ID_TOKEN = "_CFG_ID"
+    RUPDATE_CONCAT_LISTS = {TRANSFORM_CFG_TOKEN}
     _transforms: Dict[str, Callable] = {}
 
     @classmethod
@@ -357,6 +358,8 @@ class Config(AttrDict):
             if not is_mapping(cur_base_cfg) and len(backup) == 1 and len(bases) == 1:
                 return deepcopy(cur_base_cfg)
             else:
+                # ensure cur_base_cfg is resolved before using it
+                cur_base_cfg = cur_base_cfg.resolve_base_cfgs(base_cfgs)
                 self.rupdate(deepcopy(cur_base_cfg))
 
         self.rupdate(dict(backup[1:]))
@@ -372,13 +375,6 @@ class Config(AttrDict):
 
         if Config.TRANSFORM_CFG_TOKEN not in self:
             return self
-
-        if next(iter(self)) != Config.TRANSFORM_CFG_TOKEN:
-            raise ValueError(
-                "always put transform configs in the beginning of the dictionary, after"
-                " potential base cfg declarations, instead the order was %s"
-                % str(list(self))
-            )
 
         transforms = self[Config.TRANSFORM_CFG_TOKEN]
         del self[Config.TRANSFORM_CFG_TOKEN]
@@ -420,17 +416,26 @@ class Config(AttrDict):
         struct_update,
     ) -> None:
         try:
-            for k, v in struct_update.items():
-                try:
-                    self[k].rupdate(v)
-                except (KeyError, AttributeError):
-                    # if key k is not in self (KeyError),
-                    # or self[k] is not rupdate-able (AttributeError)
-                    self[k] = deepcopy(v)
+            struct_update_items = struct_update.items()
         except AttributeError:
             raise ValueError(
                 "trying to rupdate Config with a non-dict %s" % str(struct_update)
             )
+        for k, v in struct_update_items:
+            try:
+                self[k].rupdate(v)
+            except (KeyError, AttributeError):
+                # if key k is not in self (KeyError),
+                # or self[k] is not rupdate-able (AttributeError)
+                if (
+                    k in Config.RUPDATE_CONCAT_LISTS
+                    and k in self
+                    and is_sequence(self[k])
+                    and is_sequence(v)
+                ):
+                    self[k].extend(deepcopy(v))
+                else:
+                    self[k] = deepcopy(v)
 
     def get_hash_value(self):
         return hash_string(yaml.safe_dump(self, sort_keys=True))
