@@ -419,17 +419,18 @@ class Config(AttrDict):
         struct_update,
     ) -> None:
         try:
-            for k, v in struct_update.items():
-                try:
-                    self[k].rupdate(v)
-                except (KeyError, AttributeError):
-                    # if key k is not in self (KeyError),
-                    # or self[k] is not rupdate-able (AttributeError)
-                    self[k] = deepcopy(v)
+            struct_update_items = struct_update.items()
         except AttributeError:
             raise ValueError(
                 "trying to rupdate Config with a non-dict %s" % str(struct_update)
             )
+        for k, v in struct_update_items:
+            try:
+                self[k].rupdate(v)
+            except (KeyError, AttributeError):
+                # if key k is not in self (KeyError),
+                # or self[k] is not rupdate-able (AttributeError)
+                self[k] = deepcopy(v)
 
     def get_hash_value(self):
         return hash_string(yaml.safe_dump(self, sort_keys=True))
