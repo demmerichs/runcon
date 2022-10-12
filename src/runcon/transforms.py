@@ -4,11 +4,11 @@ from .attrdict import is_mapping
 from .runcon import Config
 
 
-def remove_element(cfg: dict, target: str, key: Union[int, str]) -> None:
-    subcfg = cfg
-    for t in target.split("."):
-        subcfg = subcfg[t]
-    del subcfg[key]
+def remove_element(cfg: dict, target: str, key: Union[int, str] = None) -> None:
+    if key is None:
+        del cfg[target]
+    else:
+        del cfg[target][key]
 
 
 Config.register_transform(remove_element)

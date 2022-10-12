@@ -12,8 +12,7 @@ nature:
       target: animals
       key: 0
     - name: remove_element
-      target: plants
-      key: tree
+      target: plants.tree
     animals:
     - dog
     - cat
