@@ -357,6 +357,8 @@ class Config(AttrDict):
             if not is_mapping(cur_base_cfg) and len(backup) == 1 and len(bases) == 1:
                 return deepcopy(cur_base_cfg)
             else:
+                # ensure cur_base_cfg is resolved before using it
+                cur_base_cfg = cur_base_cfg.resolve_base_cfgs(base_cfgs)
                 self.rupdate(deepcopy(cur_base_cfg))
 
         self.rupdate(dict(backup[1:]))

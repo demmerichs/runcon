@@ -206,7 +206,7 @@ def test_file_loading_of_config():
 
 def test_base_resolving_of_config():
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_bases.yml"))
-    assert """_CFG_ID: eb34e5b5e991a59bc9871573a76bd55e
+    assert """_CFG_ID: 0a6a5f378de0c87441ed16983b3ba94a
 
 plants:
   tree:
@@ -222,6 +222,8 @@ plants:
     branches:
       leaves: green
     trunk: white
+
+apples: apples
 
 with_apples:
   branches:

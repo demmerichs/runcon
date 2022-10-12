@@ -12,9 +12,12 @@ plants:
     - plants.tree
     trunk: white
 
+apples: apples
+
 with_apples:
   branches:
-    fruits: apples
+    fruits:
+      _BASE: apples
 
 pets: [dog, cat]
 
