@@ -29,6 +29,7 @@ class Config(AttrDict):
     BASE_CFG_TOKEN = "_BASE"
     TRANSFORM_CFG_TOKEN = "_TRANSFORM"
     CFG_ID_TOKEN = "_CFG_ID"
+    RUPDATE_CONCAT_LISTS = {TRANSFORM_CFG_TOKEN}
     _transforms: Dict[str, Callable] = {}
 
     @classmethod
@@ -372,13 +373,6 @@ class Config(AttrDict):
         if Config.TRANSFORM_CFG_TOKEN not in self:
             return self
 
-        if next(iter(self)) != Config.TRANSFORM_CFG_TOKEN:
-            raise ValueError(
-                "always put transform configs in the beginning of the dictionary, after"
-                " potential base cfg declarations, instead the order was %s"
-                % str(list(self))
-            )
-
         transforms = self[Config.TRANSFORM_CFG_TOKEN]
         del self[Config.TRANSFORM_CFG_TOKEN]
 
@@ -430,7 +424,15 @@ class Config(AttrDict):
             except (KeyError, AttributeError):
                 # if key k is not in self (KeyError),
                 # or self[k] is not rupdate-able (AttributeError)
-                self[k] = deepcopy(v)
+                if (
+                    k in Config.RUPDATE_CONCAT_LISTS
+                    and k in self
+                    and is_sequence(self[k])
+                    and is_sequence(v)
+                ):
+                    self[k].extend(deepcopy(v))
+                else:
+                    self[k] = deepcopy(v)
 
     def get_hash_value(self):
         return hash_string(yaml.safe_dump(self, sort_keys=True))
