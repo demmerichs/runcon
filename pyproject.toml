@@ -9,7 +9,7 @@ name = "runcon"
 version = "1.2.0a4"
 description = "Manage a multitude of runs through hierarchical configuration"
 readme = "README.md"
-authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+github@gmail.com" }]
+authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+runcon@gmail.com" }]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",

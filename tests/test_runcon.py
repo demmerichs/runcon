@@ -301,6 +301,46 @@ nature:
     )
 
 
+def test_correct_transform_resolving_during_auto_label():
+    @Config.register_transform
+    def check_and_annotate_a(cfg):
+        assert "a" not in cfg.top
+        cfg.top.a = 6.28
+
+    @Config.register_transform
+    def check_and_annotate_b(cfg):
+        assert "b" not in cfg.top
+        cfg.top.b = 2.72
+
+    base_cfgs = Config(
+        default={"top": {"middle": {"bottom": 3.14}}},
+        annotate_a={"_TRANSFORM": ["check_and_annotate_a"]},
+        annotate_b={"_TRANSFORM": ["check_and_annotate_b"]},
+    )
+
+    transform_attr_exception_cfg = Config(outer=deepcopy(base_cfgs.annotate_a))
+
+    with pytest.raises(AttributeError) as err:
+        transform_attr_exception_cfg.resolve_transforms()
+    assert "AttrDict has no key top" == str(err.value)
+
+    cfg = deepcopy(base_cfgs.default)
+    cfg.rupdate(base_cfgs.annotate_a)
+    cfg.rupdate(base_cfgs.annotate_b)
+    cfg.resolve_transforms()
+    assert """_CFG_ID: ed5e5c36560dbeee9e96b795fa22b51d
+
+top:
+  middle:
+    bottom: 3.14
+  a: 6.28
+  b: 2.72
+""" == str(
+        cfg
+    )
+    assert cfg.create_auto_label(base_cfgs) == "default annotate_a annotate_b"
+
+
 def test_a_lot_of_functionality_of_config():
     # test config recursive update
     cfg1 = Config(

@@ -370,8 +370,11 @@ class Config(AttrDict):
         for k, v in self.items():
             try:
                 self[k] = v.resolve_transforms()
-            except AttributeError:
-                pass
+            except AttributeError as err:
+                if "has no attribute 'resolve_transforms'" in str(err):
+                    pass
+                else:
+                    raise
 
         if Config.TRANSFORM_CFG_TOKEN not in self:
             return self
@@ -643,7 +646,10 @@ class Config(AttrDict):
         for bname, bcfg in base_cfgs.items():
             cfg = deepcopy(start_cfg)
             cfg.rupdate(bcfg)
-            cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
+            try:
+                cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
+            except Exception:
+                continue
             cdiff = cfg_transform_resolved.diff(self)
             struct_diff, old_diff, new_diff = cdiff.diff_count()
             next_iter_cfgs.append(
