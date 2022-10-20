@@ -240,9 +240,16 @@ class Config(AttrDict):
 
                 for k, v in zip(values[::2], values[1::2]):
                     try:
-                        getattr(namespace, self.dest)[k] = ast.literal_eval(v)
-                    except ValueError:
-                        getattr(namespace, self.dest)[k] = v
+                        v = ast.literal_eval(v)
+                    except (
+                        ValueError,
+                        TypeError,
+                        SyntaxError,
+                        MemoryError,
+                        RecursionError,
+                    ):
+                        pass
+                    getattr(namespace, self.dest)[k] = v
 
         class ConfigUnsetAction(argparse.Action):
             def __call__(
@@ -315,9 +322,10 @@ class Config(AttrDict):
 
         for k, v in zip(kv[::2], kv[1::2]):
             try:
-                ans[k] = ast.literal_eval(v)
-            except ValueError:
-                ans[k] = v
+                v = ast.literal_eval(v)
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                pass
+            ans[k] = v
 
         return ans
 
