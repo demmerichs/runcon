@@ -153,6 +153,7 @@ class Config(AttrDict):
         key = args[0]
         if isinstance(key, str) and "." in key:
             first, *others = key.split(".")
+            self[first] = self.get(first, Config())
             return self[first].__setitem__(".".join(others), *args[1:], **kwargs)
 
         return super().__setitem__(*args, **kwargs)
