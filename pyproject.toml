@@ -6,19 +6,24 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "runcon"
-version = "1.0.1"
+version = "1.1.6"
 description = "Manage a multitude of runs through hierarchical configuration"
 readme = "README.md"
-authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+github@gmail.com" }]
+authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+runcon@gmail.com" }]
 classifiers = [
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Operating System :: OS Independent",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "Intended Audience :: Science/Research",
     "Intended Audience :: Developers",
+    "Development Status :: 5 - Production/Stable",
 ]
 keywords = [
     "config",
@@ -37,6 +42,7 @@ keywords = [
     "structure",
 ]
 dependencies = [
+    "frozendict",
     "pyyaml",
     "typing_extensions",
 ]
@@ -70,7 +76,7 @@ dev = [
 GitHub = "https://github.com/demmerichs/runcon"
 
 [tool.bumpver]
-current_version = "1.0.1"
+current_version = "1.1.6"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true

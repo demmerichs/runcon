@@ -1,8 +1,8 @@
 import re
-from types import MappingProxyType
 
 import yaml
 
+from .attrdict import FrozenAttrDict
 from .runcon import Config, ConfigDiff
 
 yaml.add_representer(
@@ -16,7 +16,7 @@ yaml.add_representer(
     yaml.representer.SafeRepresenter,
 )
 yaml.add_representer(
-    MappingProxyType,
+    FrozenAttrDict,
     yaml.representer.SafeRepresenter.represent_dict,
     yaml.representer.SafeRepresenter,
 )

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 from copy import deepcopy
 from math import inf, pi
 from pathlib import Path
@@ -11,7 +12,7 @@ from runcon import Config
 from runcon.utils import get_time_stamp
 
 
-def test_finalization_of_Config():
+def test_finalization_of_config():
     cfg = Config({"b": 3, "a": 2 + 3j, "c": [3, "asdf", {"cool": inf}]})
     cfg.finalize()
 
@@ -47,7 +48,10 @@ c:
 
     with pytest.raises(TypeError) as err:
         cfg["c"][2]["cool"] = pi
-    assert err.value.args[0] == "'mappingproxy' object does not support item assignment"
+    assert (
+        err.value.args[0] == "'FrozenAttrDict' object does not support item assignment"
+    )
+    assert cfg["c"][2].cool == inf
 
     with pytest.raises(TypeError) as err:
         del cfg["c"][1]
@@ -76,7 +80,7 @@ d: null
     )
 
 
-def test_cfg_id_of_Config():
+def test_cfg_id_of_config():
     cfg1 = Config({"a": 3, "b": {"d": None, "c": "c"}, "c": "c"})
     cfg2 = Config({"a": "hi", "b": {"d": 3, "c": "c"}, "c": pi})
     cfg3 = Config({"b": {"c": None, "d": None}, "a": None, "c": None})
@@ -127,7 +131,7 @@ c: c
     assert cfg1_repr == str(cfg1)
 
 
-def test_deep_copy_of_Config():
+def test_deep_copy_of_config():
     cfg1 = Config(num=3, list=[1, 2, 3])
     cfg1.finalize()
 
@@ -137,7 +141,7 @@ def test_deep_copy_of_Config():
     assert err.value.args[0] == "'tuple' object does not support item assignment"
 
 
-def test_invalid_keys_of_Config():
+def test_invalid_keys_of_config():
     with pytest.raises(ValueError) as err:
         Config(finalize="asdf")
     assert (
@@ -182,7 +186,7 @@ def test_cfg_hashes():
     assert h1 != h3
 
 
-def test_file_loading_of_Config():
+def test_file_loading_of_config():
     with pytest.raises(FileNotFoundError) as err:
         Config.from_file(Path("tests/cfgs/does_not_exist.yml"))
     assert (
@@ -200,9 +204,9 @@ def test_file_loading_of_Config():
     Config.from_file(Path("tests/cfgs/correct_cfg_id.yml"))
 
 
-def test_base_resolving_of_Config():
+def test_base_resolving_of_config():
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_bases.yml"))
-    assert """_CFG_ID: eb34e5b5e991a59bc9871573a76bd55e
+    assert """_CFG_ID: 0a6a5f378de0c87441ed16983b3ba94a
 
 plants:
   tree:
@@ -218,6 +222,8 @@ plants:
     branches:
       leaves: green
     trunk: white
+
+apples: apples
 
 with_apples:
   branches:
@@ -256,7 +262,7 @@ nature:
     )
 
 
-def test_transform_resolving_of_Config():
+def test_transform_resolving_of_config():
     def remove_element():
         return "dummy"
 
@@ -268,6 +274,7 @@ def test_transform_resolving_of_Config():
     )
 
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
+    cfg.resolve_transforms()
     assert """_CFG_ID: 9ce64f4ea2b95bf2f5206728eefd2c1a
 
 nature:
@@ -294,8 +301,48 @@ nature:
     )
 
 
-def test_a_lot_of_functionality_of_Config():
-    # test Config recursive update
+def test_correct_transform_resolving_during_auto_label():
+    @Config.register_transform
+    def check_and_annotate_a(cfg):
+        assert "a" not in cfg.top
+        cfg.top.a = 6.28
+
+    @Config.register_transform
+    def check_and_annotate_b(cfg):
+        assert "b" not in cfg.top
+        cfg.top.b = 2.72
+
+    base_cfgs = Config(
+        default={"top": {"middle": {"bottom": 3.14}}},
+        annotate_a={"_TRANSFORM": ["check_and_annotate_a"]},
+        annotate_b={"_TRANSFORM": ["check_and_annotate_b"]},
+    )
+
+    transform_attr_exception_cfg = Config(outer=deepcopy(base_cfgs.annotate_a))
+
+    with pytest.raises(AttributeError) as err:
+        transform_attr_exception_cfg.resolve_transforms()
+    assert "AttrDict has no key top" == str(err.value)
+
+    cfg = deepcopy(base_cfgs.default)
+    cfg.rupdate(base_cfgs.annotate_a)
+    cfg.rupdate(base_cfgs.annotate_b)
+    cfg.resolve_transforms()
+    assert """_CFG_ID: ed5e5c36560dbeee9e96b795fa22b51d
+
+top:
+  middle:
+    bottom: 3.14
+  a: 6.28
+  b: 2.72
+""" == str(
+        cfg
+    )
+    assert cfg.create_auto_label(base_cfgs) == "default annotate_a annotate_b"
+
+
+def test_a_lot_of_functionality_of_config():
+    # test config recursive update
     cfg1 = Config(
         num=3,
         str="asdf",
@@ -361,17 +408,109 @@ list_of_list:
     cfg1.set_description("cfg1")
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=True,
         dump_code=True,
     )
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=get_time_stamp(include_micros=False),
     )
     cfg1_temp = deepcopy(cfg1)
     cfg1_temp.initialize_cfg_path(
-        "/tmp/Config_test",
+        "/tmp/runcon_test",
         timestamp=get_time_stamp(include_date=False),
+    )
+
+
+def test_argparse_config():
+    parser = argparse.ArgumentParser()
+    base_cfgs = Config.from_file("tests/cfgs/resolve_a_few_bases.yml")
+    Config.add_cli_parser(parser, base_cfgs)
+    args = parser.parse_args(
+        "--config nature with_apples"
+        " --set planets ['Mercury','Venus','Earth','Mars',"
+        "'Jupiter','Saturn','Uranus','Neptune']"
+        " branches.fruits pears"
+        " some_path /path/to"
+        " --unset living.plants non_living".split()
+    )
+    assert """_CFG_ID: 2d5634fe9da161e243c79101af0a84eb
+
+living:
+  animals:
+  - dog
+  - cat
+
+branches:
+  fruits: pears
+
+planets:
+- Mercury
+- Venus
+- Earth
+- Mars
+- Jupiter
+- Saturn
+- Uranus
+- Neptune
+
+some_path: /path/to
+""" == str(
+        args.config
+    )
+
+
+def test_diff_of_finalized_vs_unfinalized_config():
+    cfg = Config(
+        {
+            "list_of_dicts": [{"a": 3}, {"b": 1}, {"c": 4}],
+        }
+    )
+    cfg_unfinalized = cfg
+    cfg_finalized = deepcopy(cfg).finalize()
+    assert """_CFG_ID: 8a80554c91d9fca8acb82f023de02f11
+""" == str(
+        cfg_unfinalized.diff(cfg_finalized)
+    )
+    assert """_CFG_ID: 8a80554c91d9fca8acb82f023de02f11
+""" == str(
+        cfg_finalized.diff(cfg_unfinalized)
+    )
+
+
+def test_transform_order():
+    base_cfgs = Config(
+        {
+            "default": {"pi": 3.14, "e": 2.72},
+            "some_transform": {"_TRANSFORM": ["MAKE_KEYS_UPPER_CASE"]},
+            "some_other_transform": {
+                "_TRANSFORM": [{"name": "remove_element", "target": "pi"}]
+            },
+        }
+    )
+    cfg = base_cfgs.create(["default", "some_other_transform", "some_transform"])
+    assert """_CFG_ID: f48cdd40f7b13a4e609dae0c5693c3a7
+
+E: 2.72
+""" == str(
+        cfg
+    )
+
+    with pytest.raises(KeyError) as err:
+        cfg = base_cfgs.create(["default", "some_transform", "some_other_transform"])
+    assert "'pi'" == str(err.value)
+
+
+def test_set_value_dot_concat_notation():
+    cfg = Config()
+    cfg["top.middle.bottom"] = 3.14
+    assert """_CFG_ID: 8fe42c8c06258012f8fd887222903e52
+
+top:
+  middle:
+    bottom: 3.14
+""" == str(
+        cfg
     )

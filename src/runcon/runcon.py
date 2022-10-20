@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import ast
 import os
 import shutil
@@ -7,13 +8,12 @@ import sys
 from collections import abc
 from copy import deepcopy
 from pathlib import Path
-from types import MappingProxyType
 from typing import Any, Callable, Dict, Mapping, Sequence, Tuple, Union
 
 import yaml
 from typing_extensions import get_args, get_origin
 
-from .attrdict import AttrDict, is_mapping
+from .attrdict import AttrDict, FrozenAttrDict, is_mapping
 from .utils import Scalar, Struct, get_time_stamp, hash_string, sanitize_filename
 
 
@@ -30,6 +30,7 @@ class Config(AttrDict):
     BASE_CFG_TOKEN = "_BASE"
     TRANSFORM_CFG_TOKEN = "_TRANSFORM"
     CFG_ID_TOKEN = "_CFG_ID"
+    RUPDATE_CONCAT_LISTS = {TRANSFORM_CFG_TOKEN}
     _transforms: Dict[str, Callable] = {}
 
     @classmethod
@@ -77,7 +78,7 @@ class Config(AttrDict):
                 for k, v in struct.items()  # type: ignore[union-attr]
             }
             if final:
-                return MappingProxyType(mapping)
+                return FrozenAttrDict(mapping)
             else:
                 return mapping
 
@@ -133,7 +134,13 @@ class Config(AttrDict):
                 "This Config was already finalized! "
                 "Deleting attribute or item with name %s failed!" % str(args[0])
             )
-        super().__delitem__(*args, **kwargs)
+
+        key = args[0]
+        if isinstance(key, str) and "." in key:
+            first, *others = key.split(".")
+            return self[first].__delitem__(".".join(others), *args[1:], **kwargs)
+
+        return super().__delitem__(*args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
         if self._finalized:
@@ -146,6 +153,7 @@ class Config(AttrDict):
         key = args[0]
         if isinstance(key, str) and "." in key:
             first, *others = key.split(".")
+            self[first] = self.get(first, Config())
             return self[first].__setitem__(".".join(others), *args[1:], **kwargs)
 
         return super().__setitem__(*args, **kwargs)
@@ -191,16 +199,93 @@ class Config(AttrDict):
             )
 
     @classmethod
-    def from_file(cls, filename: Union[str, Path]) -> Config:
-        filename = Path(filename)
+    def add_cli_parser(
+        cls,
+        parser: argparse.ArgumentParser,
+        base_cfgs: Config,
+        dest: str = "config",
+        name: Union[str, Sequence[str]] = ("-c", "--config"),
+        set_name: Union[str, Sequence[str]] = ("-s", "--set"),
+        unset_name: Union[str, Sequence[str]] = ("-u", "--unset"),
+    ):
+        group = parser.add_argument_group(dest)
 
+        class ConfigAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                for cfg_name in values:
+                    getattr(namespace, self.dest).rupdate(base_cfgs[cfg_name])
+
+                getattr(namespace, self.dest).resolve_transforms()
+
+        class ConfigSetAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                N = len(values) // 2
+                assert len(values) == 2 * N
+
+                for k, v in zip(values[::2], values[1::2]):
+                    try:
+                        v = ast.literal_eval(v)
+                    except (
+                        ValueError,
+                        TypeError,
+                        SyntaxError,
+                        MemoryError,
+                        RecursionError,
+                    ):
+                        pass
+                    getattr(namespace, self.dest)[k] = v
+
+        class ConfigUnsetAction(argparse.Action):
+            def __call__(
+                self,
+                parser: argparse.ArgumentParser,
+                namespace: argparse.Namespace,
+                values,
+                option_string=None,
+            ):
+                if getattr(namespace, self.dest) is None:
+                    setattr(namespace, self.dest, cls())
+
+                for k in values:
+                    del getattr(namespace, self.dest)[k]
+
+        name = [name] if isinstance(name, str) else name
+        group.add_argument(*name, action=ConfigAction, nargs="+", dest=dest)
+        set_name = [set_name] if isinstance(set_name, str) else set_name
+        group.add_argument(*set_name, action=ConfigSetAction, nargs="+", dest=dest)
+        unset_name = [unset_name] if isinstance(unset_name, str) else unset_name
+        group.add_argument(*unset_name, action=ConfigUnsetAction, nargs="+", dest=dest)
+
+    @classmethod
+    def _load_file(cls, filename: Union[str, Path]) -> Config:
+        filename = Path(filename)
         with filename.open() as f:
             cfg = Config(yaml.safe_load(f))
-
         cfg._resolve_cfg_id_after_file_loading()
-        cfg.resolve_base_cfgs()
-        cfg.resolve_transforms()
+        return cfg
 
+    @classmethod
+    def from_file(cls, filename: Union[str, Path]) -> Config:
+        cfg = cls._load_file(filename)
+        cfg.resolve_base_cfgs()
         return cfg
 
     @classmethod
@@ -217,13 +302,9 @@ class Config(AttrDict):
         cfg = Config()
 
         for k, fname in key_file_dict.items():
-            fname = Path(fname)
-            with fname.open() as f:
-                cfg[k] = Config(yaml.safe_load(f))
-                cfg[k]._resolve_cfg_id_after_file_loading()
+            cfg[k] = cls._load_file(fname)
 
         cfg.resolve_base_cfgs()
-        cfg.resolve_transforms()
 
         return cfg
 
@@ -233,6 +314,8 @@ class Config(AttrDict):
         for cfg_name in cfg_chain[1:]:
             ans.rupdate(self[cfg_name])
 
+        ans.resolve_transforms()
+
         if kv is None:
             return ans
 
@@ -241,9 +324,10 @@ class Config(AttrDict):
 
         for k, v in zip(kv[::2], kv[1::2]):
             try:
-                ans[k] = ast.literal_eval(v)
-            except ValueError:
-                ans[k] = v
+                v = ast.literal_eval(v)
+            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+                pass
+            ans[k] = v
 
         return ans
 
@@ -283,6 +367,8 @@ class Config(AttrDict):
             if not is_mapping(cur_base_cfg) and len(backup) == 1 and len(bases) == 1:
                 return deepcopy(cur_base_cfg)
             else:
+                # ensure cur_base_cfg is resolved before using it
+                cur_base_cfg = cur_base_cfg.resolve_base_cfgs(base_cfgs)
                 self.rupdate(deepcopy(cur_base_cfg))
 
         self.rupdate(dict(backup[1:]))
@@ -293,18 +379,14 @@ class Config(AttrDict):
         for k, v in self.items():
             try:
                 self[k] = v.resolve_transforms()
-            except AttributeError:
-                pass
+            except AttributeError as err:
+                if "has no attribute 'resolve_transforms'" in str(err):
+                    pass
+                else:
+                    raise
 
         if Config.TRANSFORM_CFG_TOKEN not in self:
             return self
-
-        if next(iter(self)) != Config.TRANSFORM_CFG_TOKEN:
-            raise ValueError(
-                "always put transform configs in the beginning of the dictionary, after"
-                " potential base cfg declarations, instead the order was %s"
-                % str(list(self))
-            )
 
         transforms = self[Config.TRANSFORM_CFG_TOKEN]
         del self[Config.TRANSFORM_CFG_TOKEN]
@@ -346,17 +428,26 @@ class Config(AttrDict):
         struct_update,
     ) -> None:
         try:
-            for k, v in struct_update.items():
-                try:
-                    self[k].rupdate(v)
-                except (KeyError, AttributeError):
-                    # if key k is not in self (KeyError),
-                    # or self[k] is not rupdate-able (AttributeError)
-                    self[k] = deepcopy(v)
+            struct_update_items = struct_update.items()
         except AttributeError:
             raise ValueError(
                 "trying to rupdate Config with a non-dict %s" % str(struct_update)
             )
+        for k, v in struct_update_items:
+            try:
+                self[k].rupdate(v)
+            except (KeyError, AttributeError):
+                # if key k is not in self (KeyError),
+                # or self[k] is not rupdate-able (AttributeError)
+                if (
+                    k in Config.RUPDATE_CONCAT_LISTS
+                    and k in self
+                    and is_sequence(self[k])
+                    and is_sequence(v)
+                ):
+                    self[k].extend(deepcopy(v))
+                else:
+                    self[k] = deepcopy(v)
 
     def get_hash_value(self):
         return hash_string(yaml.safe_dump(self, sort_keys=True))
@@ -550,7 +641,8 @@ class Config(AttrDict):
     ):
         if start_cfg is None:
             start_cfg = Config()
-        sdiff = start_cfg.diff(self)
+        start_cfg_transform_resolved = deepcopy(start_cfg).resolve_transforms()
+        sdiff = start_cfg_transform_resolved.diff(self)
         struct_diff, old_diff, new_diff = sdiff.diff_count()
         next_iter_cfgs = [
             (
@@ -563,7 +655,11 @@ class Config(AttrDict):
         for bname, bcfg in base_cfgs.items():
             cfg = deepcopy(start_cfg)
             cfg.rupdate(bcfg)
-            cdiff = cfg.diff(self)
+            try:
+                cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
+            except Exception:
+                continue
+            cdiff = cfg_transform_resolved.diff(self)
             struct_diff, old_diff, new_diff = cdiff.diff_count()
             next_iter_cfgs.append(
                 (
@@ -605,7 +701,7 @@ class ConfigDiff(Config):
     class Nothing:
         pass
 
-    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Config):
+    def __init__(self, cfg_old: Union[Config, Struct], cfg_new: Union[Config, Struct]):
         super().__init__()
         self.set_attribute("_ConfigDiff__leaf", False)
 
@@ -627,6 +723,11 @@ class ConfigDiff(Config):
             self.set_old(cfg_old)
             self.set_new(cfg_new)
             return
+
+        assert isinstance(cfg_old, Config)
+        assert isinstance(cfg_new, Config)
+        cfg_old = deepcopy(cfg_old).finalize()
+        cfg_new = deepcopy(cfg_new).finalize()
 
         # create all_keys list in this manner to preserve order
         all_keys = list(cfg_old)
