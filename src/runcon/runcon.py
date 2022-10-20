@@ -539,7 +539,7 @@ class Config(AttrDict):
     @staticmethod
     def dump_code_snapshot(path: Union[str, Path]):
         path = Path(path)
-        dst = path / "snapshot"
+        dst = (path / "snapshot").resolve()
 
         if dst.exists():
             raise ValueError("there already exists a code snapshot at %s" % dst)
