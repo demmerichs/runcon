@@ -43,6 +43,7 @@ keywords = [
 ]
 dependencies = [
     "frozendict",
+    "GitPython",
     "pyyaml",
     "typing_extensions",
 ]

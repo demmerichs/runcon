@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, Mapping, Sequence, Tuple, Union
 
 import yaml
+from git import Repo
 from typing_extensions import get_args, get_origin
 
 from .attrdict import AttrDict, FrozenAttrDict, is_mapping
@@ -548,10 +549,25 @@ class Config(AttrDict):
         while not (repo_base / ".git").is_dir():
             repo_base = repo_base.parent
 
-        shutil.copytree(repo_base, dst, symlinks=True)
+        repo = Repo(repo_base)
+
+        def ignore(cur_dir: Union[str, Path], contents: Sequence[str]):
+            cur_dir = Path(cur_dir)
+            ans = set()
+            if (cur_dir / dst.name).resolve() == dst:
+                ans.add(dst.name)
+            if cur_dir.resolve() == repo_base:
+                ans.add(".git")
+            ignoreds = repo.ignored([cur_dir / cont for cont in contents])
+            ignoreds = {str(Path(ign).relative_to(cur_dir)) for ign in ignoreds}
+            ans |= ignoreds
+            assert ans.issubset(contents), (ans, contents)
+            return ans
+
+        shutil.copytree(repo_base, dst, symlinks=True, ignore=ignore)
+
         cwd = Path.cwd()
-        os.chdir(dst)
-        os.system("git clean -Xdf")
+        os.chdir(repo_base)
 
         dst_githist = dst / ".githistory"
         if dst_githist.exists():
@@ -559,10 +575,10 @@ class Config(AttrDict):
         dst_githist.mkdir()
         os.system(
             "git log --oneline --no-decorate --no-abbrev-commit"
-            " > .githistory/gitlog.txt"
+            " > %s" % (dst_githist / "gitlog.txt")
         )
-        os.system("git remote -v > .githistory/gitremotes.txt")
-        shutil.rmtree(dst / ".git")
+        os.system("git remote -v > %s" % (dst_githist / "gitremotes.txt"))
+
         os.chdir(cwd)
 
     def get_cfg_path(self) -> Path:
