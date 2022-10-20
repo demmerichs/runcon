@@ -433,9 +433,10 @@ def test_argparse_config():
         " --set planets ['Mercury','Venus','Earth','Mars',"
         "'Jupiter','Saturn','Uranus','Neptune']"
         " branches.fruits pears"
+        " some_path /path/to"
         " --unset living.plants non_living".split()
     )
-    assert """_CFG_ID: d75ffd508e287912cdf17a05271e95e3
+    assert """_CFG_ID: 2d5634fe9da161e243c79101af0a84eb
 
 living:
   animals:
@@ -454,6 +455,8 @@ planets:
 - Saturn
 - Uranus
 - Neptune
+
+some_path: /path/to
 """ == str(
         args.config
     )
