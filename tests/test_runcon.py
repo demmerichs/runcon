@@ -500,3 +500,16 @@ E: 2.72
     with pytest.raises(KeyError) as err:
         cfg = base_cfgs.create(["default", "some_transform", "some_other_transform"])
     assert "'pi'" == str(err.value)
+
+
+def test_set_value_dot_concat_notation():
+    cfg = Config()
+    cfg["top.middle.bottom"] = 3.14
+    assert """_CFG_ID: 8fe42c8c06258012f8fd887222903e52
+
+top:
+  middle:
+    bottom: 3.14
+""" == str(
+        cfg
+    )
