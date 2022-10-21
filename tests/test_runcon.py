@@ -513,3 +513,19 @@ top:
 """ == str(
         cfg
     )
+
+
+def test_pickling():
+    import pickle
+
+    cfg = Config(pi=3.14, e=2.72, constants=[3.14, 2.72])
+    pcfg = pickle.loads(pickle.dumps(cfg))
+    assert str(cfg) == str(pcfg)
+    assert not cfg._finalized and cfg._finalized == pcfg._finalized
+    assert isinstance(cfg.constants, list) and isinstance(pcfg.constants, list)
+
+    cfg.finalize()
+    pcfg = pickle.loads(pickle.dumps(cfg))
+    assert str(cfg) == str(pcfg)
+    assert cfg._finalized and cfg._finalized == pcfg._finalized
+    assert isinstance(cfg.constants, tuple) and isinstance(pcfg.constants, tuple)

@@ -142,7 +142,7 @@ class Config(AttrDict):
         return super().__delitem__(*args, **kwargs)
 
     def __setitem__(self, *args, **kwargs):
-        if self._finalized:
+        if hasattr(self, "_finalized") and self._finalized:
             raise ValueError(
                 "This Config was already finalized! "
                 "Setting attribute or item with name %s to value %s failed!"
