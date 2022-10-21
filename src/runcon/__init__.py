@@ -11,4 +11,4 @@ from .attrdict import AttrDict
 from .runcon import Config
 from .utils import get_time_stamp, hash_string
 
-__version__ = "1.1.6"
+__version__ = "1.1.7"

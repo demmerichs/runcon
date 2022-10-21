@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "runcon"
-version = "1.1.6"
+version = "1.1.7"
 description = "Manage a multitude of runs through hierarchical configuration"
 readme = "README.md"
 authors = [{ name = "David Emmerichs", email = "davidj.emmerichs+runcon@gmail.com" }]
@@ -76,7 +76,7 @@ dev = [
 GitHub = "https://github.com/demmerichs/runcon"
 
 [tool.bumpver]
-current_version = "1.1.6"
+current_version = "1.1.7"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
 commit_message = "bump version {old_version} -> {new_version}"
 commit = true
