@@ -25,6 +25,14 @@ def is_scalar(struct) -> bool:
     return isinstance(struct, get_args(Scalar))
 
 
+def ast_parse(value: str) -> Any:
+    try:
+        value = ast.literal_eval(value)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        pass
+    return value
+
+
 class Config(AttrDict):
     BASE_CFG_TOKEN = "_BASE"
     TRANSFORM_CFG_TOKEN = "_TRANSFORM"
@@ -240,17 +248,7 @@ class Config(AttrDict):
                 assert len(values) == 2 * N
 
                 for k, v in zip(values[::2], values[1::2]):
-                    try:
-                        v = ast.literal_eval(v)
-                    except (
-                        ValueError,
-                        TypeError,
-                        SyntaxError,
-                        MemoryError,
-                        RecursionError,
-                    ):
-                        pass
-                    getattr(namespace, self.dest)[k] = v
+                    getattr(namespace, self.dest)[k] = ast_parse(v)
 
         class ConfigUnsetAction(argparse.Action):
             def __call__(
@@ -322,11 +320,7 @@ class Config(AttrDict):
         assert len(kv) == 2 * N
 
         for k, v in zip(kv[::2], kv[1::2]):
-            try:
-                v = ast.literal_eval(v)
-            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
-                pass
-            ans[k] = v
+            ans[k] = ast_parse(v)
 
         return ans
 
