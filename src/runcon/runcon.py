@@ -395,21 +395,26 @@ class Config(AttrDict):
 
         for tf in transforms:
             if isinstance(tf, str):
-                self._transforms[tf](self)
+                tf_name = tf
+                tf_kwargs = {}
             elif is_mapping(tf):
                 if "name" not in tf:
                     raise ValueError(
                         "you need to specify the transform through a 'name' key, which"
                         " is not present in %s" % str(tf)
                     )
+                tf_name = tf["name"]
                 tf_kwargs = deepcopy(tf)
                 del tf_kwargs["name"]
-                self._transforms[tf["name"]](self, **tf_kwargs)
             else:
                 raise ValueError(
                     "transform either needs to be a mapping with 'name' and other"
                     " kwargs or just a string being the name, not %s" % str(tf)
                 )
+
+            if tf_name not in self._transforms:
+                raise ValueError("no transform named '%s' is registered" % tf_name)
+            self._transforms[tf_name](self, **tf_kwargs)
 
         return self
 
@@ -626,8 +631,15 @@ class Config(AttrDict):
             cfg.rupdate(bcfg)
             try:
                 cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
-            except Exception:
-                continue
+            except Exception as err:
+                err_parts = str(err).split("'")
+                if len(err_parts) != 3:
+                    continue
+                if err_parts[0] != "no transform named ":
+                    continue
+                if err_parts[2] != " is registered":
+                    continue
+                raise
             cdiff = cfg_transform_resolved.diff(self)
             struct_diff, old_diff, new_diff = cdiff.diff_count()
             next_iter_cfgs.append(
