@@ -551,6 +551,7 @@ class Config(AttrDict):
         timestamp: Union[str, bool] = False,
         dump_command: bool = True,
         verbose: bool = False,
+        create_description_symlink: bool = True,
     ) -> Path:
         """Create and return path based on the hash of this config.
         Parameters
@@ -596,7 +597,8 @@ class Config(AttrDict):
             Config.dump_command(stamped_dirname)
         self.set_attribute("_initialized_path", stamped_dirname)
         if self._description is not None:
-            self.create_description_symlink(dirname, self._description)
+            if create_description_symlink:
+                self.create_description_symlink(dirname, self._description)
             self.dump_description(dirname, self._description)
         return stamped_dirname
 
