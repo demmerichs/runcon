@@ -521,7 +521,7 @@ class Config(AttrDict):
                 )
             return
         dst.symlink_to(src)
-        dst.with_suffix(".cfg").symlink_to(src.with_suffix(".cfg"))
+        Path(str(dst) + ".cfg").symlink_to(str(src) + ".cfg")
 
     @staticmethod
     def dump_description(path: Union[str, Path], description: str):
