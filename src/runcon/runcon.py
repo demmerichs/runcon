@@ -27,6 +27,14 @@ def is_scalar(struct) -> bool:
     return isinstance(struct, get_args(Scalar))
 
 
+def ast_parse(value: str) -> Any:
+    try:
+        value = ast.literal_eval(value)
+    except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
+        pass
+    return value
+
+
 class Config(AttrDict):
     BASE_CFG_TOKEN = "_BASE"
     TRANSFORM_CFG_TOKEN = "_TRANSFORM"
@@ -242,17 +250,7 @@ class Config(AttrDict):
                 assert len(values) == 2 * N
 
                 for k, v in zip(values[::2], values[1::2]):
-                    try:
-                        v = ast.literal_eval(v)
-                    except (
-                        ValueError,
-                        TypeError,
-                        SyntaxError,
-                        MemoryError,
-                        RecursionError,
-                    ):
-                        pass
-                    getattr(namespace, self.dest)[k] = v
+                    getattr(namespace, self.dest)[k] = ast_parse(v)
 
         class ConfigUnsetAction(argparse.Action):
             def __call__(
@@ -324,11 +322,7 @@ class Config(AttrDict):
         assert len(kv) == 2 * N
 
         for k, v in zip(kv[::2], kv[1::2]):
-            try:
-                v = ast.literal_eval(v)
-            except (ValueError, TypeError, SyntaxError, MemoryError, RecursionError):
-                pass
-            ans[k] = v
+            ans[k] = ast_parse(v)
 
         return ans
 
@@ -397,21 +391,26 @@ class Config(AttrDict):
 
         for tf in transforms:
             if isinstance(tf, str):
-                self._transforms[tf](self)
+                tf_name = tf
+                tf_kwargs = {}
             elif is_mapping(tf):
                 if "name" not in tf:
                     raise ValueError(
                         "you need to specify the transform through a 'name' key, which"
                         " is not present in %s" % str(tf)
                     )
+                tf_name = tf["name"]
                 tf_kwargs = deepcopy(tf)
                 del tf_kwargs["name"]
-                self._transforms[tf["name"]](self, **tf_kwargs)
             else:
                 raise ValueError(
                     "transform either needs to be a mapping with 'name' and other"
                     " kwargs or just a string being the name, not %s" % str(tf)
                 )
+
+            if tf_name not in self._transforms:
+                raise ValueError("no transform named '%s' is registered" % tf_name)
+            self._transforms[tf_name](self, **tf_kwargs)
 
         return self
 
@@ -493,7 +492,9 @@ class Config(AttrDict):
             f.write(cmd)
 
     @staticmethod
-    def create_description_symlink(path: Union[str, Path], description: str):
+    def create_description_symlink(
+        path: Union[str, Path], description: str, name: str = "description"
+    ):
         path = Path(path)
 
         if description != sanitize_filename(description):
@@ -503,8 +504,19 @@ class Config(AttrDict):
             )
 
         src = Path("..") / path.name
-        dst = path.parent / "description" / description
+        dst = path.parent / name / description
         dst.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            dst.exists()
+        except OSError as err:
+            if "File name too long:" in str(err):
+                raise OSError(
+                    str(err) + "\nCan not create symlink for '%s'" % path
+                ) from err
+            else:
+                raise
+
         if dst.exists():
             if not dst.is_symlink():
                 raise EnvironmentError(
@@ -518,7 +530,7 @@ class Config(AttrDict):
                 )
             return
         dst.symlink_to(src)
-        dst.with_suffix(".cfg").symlink_to(src.with_suffix(".cfg"))
+        Path(str(dst) + ".cfg").symlink_to(str(src) + ".cfg")
 
     @staticmethod
     def dump_description(path: Union[str, Path], description: str):
@@ -598,6 +610,7 @@ class Config(AttrDict):
         dump_command: bool = True,
         dump_code: bool = False,
         verbose: bool = False,
+        create_description_symlink: bool = True,
     ) -> Path:
         """Create and return path based on the hash of this config.
         Parameters
@@ -645,7 +658,8 @@ class Config(AttrDict):
             Config.dump_code_snapshot(stamped_dirname)
         self.set_attribute("_initialized_path", stamped_dirname)
         if self._description is not None:
-            self.create_description_symlink(dirname, self._description)
+            if create_description_symlink:
+                self.create_description_symlink(dirname, self._description)
             self.dump_description(dirname, self._description)
         return stamped_dirname
 
@@ -673,8 +687,15 @@ class Config(AttrDict):
             cfg.rupdate(bcfg)
             try:
                 cfg_transform_resolved = deepcopy(cfg).resolve_transforms()
-            except Exception:
-                continue
+            except Exception as err:
+                err_parts = str(err).split("'")
+                if len(err_parts) != 3:
+                    continue
+                if err_parts[0] != "no transform named ":
+                    continue
+                if err_parts[2] != " is registered":
+                    continue
+                raise
             cdiff = cfg_transform_resolved.diff(self)
             struct_diff, old_diff, new_diff = cdiff.diff_count()
             next_iter_cfgs.append(
