@@ -75,6 +75,9 @@ dev = [
 [project.urls]
 GitHub = "https://github.com/demmerichs/runcon"
 
+[project.scripts]
+runcon = "runcon.scripts:main"
+
 [tool.bumpver]
 current_version = "1.1.7"
 version_pattern = "MAJOR.MINOR.PATCH[PYTAGNUM]"
