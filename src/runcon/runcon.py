@@ -496,7 +496,9 @@ class Config(AttrDict):
             f.write(cmd)
 
     @staticmethod
-    def create_description_symlink(path: Union[str, Path], description: str):
+    def create_description_symlink(
+        path: Union[str, Path], description: str, name: str = "description"
+    ):
         path = Path(path)
 
         if description != sanitize_filename(description):
@@ -506,8 +508,19 @@ class Config(AttrDict):
             )
 
         src = Path("..") / path.name
-        dst = path.parent / "description" / description
+        dst = path.parent / name / description
         dst.parent.mkdir(parents=True, exist_ok=True)
+
+        try:
+            dst.exists()
+        except OSError as err:
+            if "File name too long:" in str(err):
+                raise OSError(
+                    str(err) + "\nCan not create symlink for '%s'" % path
+                ) from err
+            else:
+                raise
+
         if dst.exists():
             if not dst.is_symlink():
                 raise EnvironmentError(
