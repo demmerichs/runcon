@@ -80,7 +80,8 @@ def description(path):
 @click.option("-p", "--path", type=click.Path(exists=True), default=None)
 @click.option("-b", "--base_config", type=click.Path(exists=True), default=None)
 @click.option("-t", "--transforms", type=click.Path(exists=True), default=None)
-def auto(path, base_config, transforms):
+@click.option("-k", "--topk", type=int, default=1)
+def auto(path, base_config, transforms, topk):
     if path is None:
         path = Path.cwd()
     else:
@@ -94,13 +95,12 @@ def auto(path, base_config, transforms):
     if transforms is not None:
         transforms = Path(transforms).absolute()
         assert transforms.suffix == ".py"
-        assert transforms.is_relative_to(Path.cwd())
         transforms = transforms.relative_to(Path.cwd())
         package_notation = str(transforms.with_suffix("")).replace("/", ".")
         importlib.import_module(package_notation)
 
     for cfg_file in path.glob("*.cfg"):
         cfg_path = cfg_file.with_suffix("")
-        desc = Config.from_file(cfg_file).create_auto_label(base_cfg)
-        desc = sanitize_filename(desc)
+        desc = Config.from_file(cfg_file).create_auto_label(base_cfg, top_k=topk)
+        desc = sanitize_filename(desc.replace(" ", "__"))
         Config.create_description_symlink(cfg_path, desc, name="auto")
