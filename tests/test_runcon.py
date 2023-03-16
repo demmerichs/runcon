@@ -274,8 +274,19 @@ def test_transform_resolving_of_config():
     )
 
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
+    with pytest.raises(ValueError) as err:
+        cfg.resolve_transforms()
+    assert "environment variable named $RUNCON_TEST_ENV was not defined" == str(
+        err.value
+    )
+
+    import os
+
+    os.environ["RUNCON_TEST_ENV"] = "ENV_SET"
+
+    cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
     cfg.resolve_transforms()
-    assert """_CFG_ID: 9ce64f4ea2b95bf2f5206728eefd2c1a
+    assert """_CFG_ID: 78ede4e425031ef67f21e9d9cb4c3cef
 
 nature:
   non_living:
@@ -296,6 +307,16 @@ nature:
           leaves: green
         TRUNK: white
       algea: null
+  virtual_env:
+    direct: ENV_SET
+    list:
+    - ENV_SET
+    - running_test
+    list_of_list:
+    - - ENV_SET
+      - running_test
+    - - ENV_SET
+      - running_test
 """ == str(
         cfg
     )

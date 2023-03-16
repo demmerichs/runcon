@@ -1,3 +1,4 @@
+_TRANSFORM: resolve_env
 nature:
   _TRANSFORM:
     name: make_setlike_dict
@@ -36,3 +37,13 @@ nature:
           leaves: green
         trunk: white
       algea: null
+  virtual_env:
+    direct: $RUNCON_TEST_ENV
+    list:
+    - $RUNCON_TEST_ENV
+    - running_test
+    list_of_list:
+    - - $RUNCON_TEST_ENV
+      - running_test
+    - - $RUNCON_TEST_ENV
+      - running_test
