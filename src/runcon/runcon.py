@@ -96,7 +96,7 @@ class Config(AttrDict):
             else:
                 return list(sequence)
 
-        assert is_scalar(struct)
+        assert is_scalar(struct), type(struct)
         return struct
 
     def get_cfg_id(self) -> str:
@@ -618,7 +618,12 @@ class Config(AttrDict):
         return ConfigDiff(self, other)
 
     def create_auto_label(
-        self, base_cfgs: Config, start_cfg: Config = None, top_k: int = 5
+        self,
+        base_cfgs: Config,
+        start_cfg: Config = None,
+        top_k: int = 5,
+        verbose: int = 0,
+        _depth: int = 0,
     ):
         if start_cfg is None:
             start_cfg = Config()
@@ -671,8 +676,14 @@ class Config(AttrDict):
 
         best_auto_label = None
         for bname, cfg, _cdiff, _diff_counts in next_iter_cfgs:
+            if verbose >= 1:
+                print("\t" * _depth, bname, _diff_counts)
             sub_autolabel = self.create_auto_label(
-                base_cfgs, start_cfg=cfg, top_k=top_k
+                base_cfgs,
+                start_cfg=cfg,
+                top_k=top_k,
+                verbose=verbose,
+                _depth=_depth + 1,
             )
             auto_label = bname
             if len(sub_autolabel) > 0:
