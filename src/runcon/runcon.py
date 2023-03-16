@@ -570,9 +570,9 @@ class Config(AttrDict):
                 ans.add(dst.name)
             if cur_dir.resolve() == repo_base:
                 ans.add(".git")
-            ignoreds = repo.ignored([cur_dir / cont for cont in contents])
-            ignoreds = {str(Path(ign).relative_to(cur_dir)) for ign in ignoreds}
-            ans |= ignoreds
+            if len(contents):
+                ignoreds = repo.ignored([cur_dir / cont for cont in contents])
+                ans |= {str(Path(ign).relative_to(cur_dir)) for ign in ignoreds}
             assert ans.issubset(contents), (ans, contents)
             return ans
 
