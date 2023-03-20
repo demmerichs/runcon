@@ -41,6 +41,15 @@ def resolve_env(cfg: Any) -> Any:
 Config.register_transform(resolve_env)
 
 
+def copy_value(cfg: Config, src: str, dest: str) -> None:
+    if src not in cfg:
+        raise ValueError("config has no key '%s' to copy from:\n%s" % (src, cfg))
+    cfg[dest] = cfg[src]
+
+
+Config.register_transform(copy_value, name="copy")
+
+
 def make_setlike_dict(cfg: dict, targets: List[str]) -> None:
     for target in targets:
         subcfg = cfg

@@ -129,6 +129,14 @@ class Config(AttrDict):
     def unfinalize(self) -> Config:
         return self.finalize(False)
 
+    def __contains__(self, *args, **kwargs):
+        key = args[0]
+        if isinstance(key, str) and "." in key:
+            first, *others = key.split(".")
+            return ".".join(others) in self[first]
+
+        return super().__contains__(*args, **kwargs)
+
     def __getitem__(self, *args, **kwargs):
         key = args[0]
         if isinstance(key, str) and "." in key:

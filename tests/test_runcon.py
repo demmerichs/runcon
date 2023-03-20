@@ -276,6 +276,16 @@ def test_transform_resolving_of_config():
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
     with pytest.raises(ValueError) as err:
         cfg.resolve_transforms()
+    assert (
+        "config has no key 'tree.TRUNK' to copy from:" == str(err.value).split("\n")[0]
+    )
+
+    cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
+    cfg.nature.living.plants._TRANSFORM[0]["src"] = cfg.nature.living.plants._TRANSFORM[
+        0
+    ]["src"].lower()
+    with pytest.raises(ValueError) as err:
+        cfg.resolve_transforms()
     assert "environment variable named $RUNCON_TEST_ENV was not defined" == str(
         err.value
     )
@@ -285,6 +295,9 @@ def test_transform_resolving_of_config():
     os.environ["RUNCON_TEST_ENV"] = "ENV_SET"
 
     cfg = Config.from_file(Path("tests/cfgs/resolve_a_few_transforms.yml"))
+    cfg.nature.living.plants._TRANSFORM[0]["src"] = cfg.nature.living.plants._TRANSFORM[
+        0
+    ]["src"].lower()
     cfg.resolve_transforms()
     assert """_CFG_ID: 78ede4e425031ef67f21e9d9cb4c3cef
 
