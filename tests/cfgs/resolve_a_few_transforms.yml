@@ -18,6 +18,10 @@ nature:
     - dog
     - cat
     plants:
+      _TRANSFORM:
+      - name: copy
+        src: tree.TRUNK
+        dest: appletree.TRUNK
       tree:
         branches:
           leaves: green
@@ -28,7 +32,6 @@ nature:
         branches:
           leaves: green
           fruits: apples
-        trunk: brown
       oaktree:
         _TRANSFORM:
         - name: MAKE_KEYS_UPPER_CASE
