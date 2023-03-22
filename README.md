@@ -14,6 +14,8 @@ runcon is an MIT-licensed package that provides a `Config` class with a lot of f
 
 This package was developed with Deep Learning experiments in mind. These usually consist of large and complex configurations and will therefore also be the basis for the upcoming examples of usage.
 
+You can find the API reference [here](https://demmerichs.github.io/runcon/)!
+
 <a id="toc"></a>
 - [Installation](#installation)
 - [Basic Usage](#basic-usage)
