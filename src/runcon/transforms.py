@@ -41,13 +41,32 @@ def resolve_env(cfg: Any) -> Any:
 Config.register_transform(resolve_env)
 
 
-def copy_value(cfg: Config, src: str, dest: str) -> None:
+def copy(cfg: Config, src: str, dest: str) -> None:
+    """Copy a value from one config key to another.
+
+    Examples:
+        >>> cfg = Config(a={'b': 3.14}, _TRANSFORM=[dict(name='copy',src='a.b',dest='c.d.e')])
+        >>> print(cfg.resolve_transforms())
+        _CFG_ID: fbd3c7ee770ab0029d8f4c47c78eb095
+        <BLANKLINE>
+        a:
+          b: 3.14
+        <BLANKLINE>
+        c:
+          d:
+            e: 3.14
+        <BLANKLINE>
+
+    Args:
+        src: The key of the source value.
+        dest: The key that is created or overriden using the source value.
+    """
     if src not in cfg:
         raise ValueError("config has no key '%s' to copy from:\n%s" % (src, cfg))
     cfg[dest] = cfg[src]
 
 
-Config.register_transform(copy_value, name="copy")
+Config.register_transform(copy, name="copy")
 
 
 def make_setlike_dict(cfg: dict, targets: List[str]) -> None:
