@@ -46,9 +46,9 @@ def copy(cfg: Config, src: str, dest: str) -> None:
 
     Examples:
         >>> cfg = Config(
-                a={'b': 3.14},
-                _TRANSFORM=[dict(name='copy',src='a.b',dest='c.d.e')]
-            )
+        ...     a={'b': 3.14},
+        ...     _TRANSFORM=[dict(name='copy',src='a.b',dest='c.d.e')]
+        ... )
         >>> print(cfg.resolve_transforms())
         _CFG_ID: fbd3c7ee770ab0029d8f4c47c78eb095
         <BLANKLINE>
