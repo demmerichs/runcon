@@ -19,3 +19,6 @@ dist
 
 # phmdoctest
 autogen_phmdoctest
+
+# mkdocs
+site

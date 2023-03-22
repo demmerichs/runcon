@@ -104,4 +104,4 @@ profile = 'black'
 
 [tool.pytest.ini_options]
 addopts = '-s -rA --doctest-modules'
-testpaths = ['tests']
+testpaths = ['tests','src']
