@@ -85,16 +85,20 @@ def resolve_env(cfg: Any) -> Any:
 Config.register_transform(resolve_env)
 
 
-def copy(cfg: Config, src: str, dest: str) -> None:
+def copy(cfg: Config, src: str, dest: str, expr: str = None, **kwargs) -> None:
     """Copy a value from one config key to another.
 
     Examples:
         >>> cfg = Config(
         ...     a={'b': 3.14},
-        ...     _TRANSFORM=[dict(name='copy',src='a.b',dest='c.d.e')]
+        ...     _TRANSFORM=[
+        ...         dict(name='copy',src='a.b',dest='c.d.e'),
+        ...         dict(name='copy',src='a.b', another_src='c.d', dest='f',
+        ...              expr='[src, another_src, src*2, [src]*2]'),
+        ...     ]
         ... )
         >>> print(cfg.resolve_transforms())
-        _CFG_ID: fbd3c7ee770ab0029d8f4c47c78eb095
+        _CFG_ID: 4dea82568c56bf77f51d19e9aaa27f95
         <BLANKLINE>
         a:
           b: 3.14
@@ -103,15 +107,51 @@ def copy(cfg: Config, src: str, dest: str) -> None:
           d:
             e: 3.14
         <BLANKLINE>
+        f:
+        - 3.14
+        - e: 3.14
+        - 6.28
+        - - 3.14
+          - 3.14
+        <BLANKLINE>
 
     Args:
         cfg: The configuration to which the transform is applied.
         src: The key of the source value.
         dest: The key that is created or overriden using the source value.
+        expr: If provided, the destination will become an evaluation of the string,
+              replacing names with config values specified by src and other kwargs.
+              `simpleeval` is the package used in the background
+              and only supports basic operations.
     """
-    if src not in cfg:
-        raise ValueError("config has no key '%s' to copy from:\n%s" % (src, cfg))
-    cfg[dest] = cfg[src]
+    if expr is None:
+        if src not in cfg:
+            raise ValueError("config has no key '%s' to copy from:\n%s" % (src, cfg))
+        if len(kwargs):
+            raise ValueError(
+                "kwargs were provided without an 'expr' that uses them:\n%s"
+                % set(kwargs.keys())
+            )
+        cfg[dest] = cfg[src]
+    else:
+        import copy as copy_module
+
+        import simpleeval as se
+
+        kwargs["src"] = src
+        substitutions = se.DEFAULT_NAMES
+        for name, key in kwargs.items():
+            if name not in expr:
+                raise ValueError(
+                    "variable %s was given in kwargs but not used in expr '%s'"
+                    % (name, expr)
+                )
+            if key not in cfg:
+                raise ValueError(
+                    "config has no key '%s' to copy from:\n%s" % (key, cfg)
+                )
+            substitutions[name] = copy_module.copy(cfg[key])
+        cfg[dest] = se.EvalWithCompoundTypes(names=substitutions).eval(expr)
 
 
 Config.register_transform(copy, name="copy")

@@ -44,6 +44,7 @@ keywords = [
 dependencies = [
     "frozendict",
     "pyyaml",
+    "simpleeval",
     "typing_extensions",
 ]
 requires-python = ">=3.7"  # dicts are insertion-ordered since then
@@ -64,6 +65,7 @@ dev = [
     "flake8-quotes",
     "flake8-string-format",
     "ipython",
+    "ipdb",
     "isort",
     "phmdoctest",
     "pre-commit",
