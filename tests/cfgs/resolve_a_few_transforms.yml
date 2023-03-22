@@ -10,10 +10,10 @@ nature:
   living:
     _TRANSFORM:
     - name: remove_element
-      target: animals
-      key: 0
+      key: animals
+      idx: 0
     - name: remove_element
-      target: plants.tree
+      key: plants.tree
     animals:
     - dog
     - cat

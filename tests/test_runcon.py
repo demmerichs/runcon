@@ -519,7 +519,7 @@ def test_transform_order():
             "default": {"pi": 3.14, "e": 2.72},
             "some_transform": {"_TRANSFORM": ["MAKE_KEYS_UPPER_CASE"]},
             "some_other_transform": {
-                "_TRANSFORM": [{"name": "remove_element", "target": "pi"}]
+                "_TRANSFORM": [{"name": "remove_element", "key": "pi"}]
             },
         }
     )

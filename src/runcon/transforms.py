@@ -1,21 +1,65 @@
 import os
-from typing import Any, List, Union
+from typing import Any, List
 
 from .attrdict import is_mapping
 from .runcon import Config, is_sequence
 
 
-def remove_element(cfg: dict, target: str, key: Union[int, str] = None) -> None:
-    if key is None:
-        del cfg[target]
+def remove_element(cfg: Config, key: str, idx: int = None) -> None:
+    """Remove an element from a collection.
+
+    Examples:
+        >>> cfg = Config(
+        ...     a={'b': [3.14, 2.71], 'c': 'pi'},
+        ...     _TRANSFORM=[
+        ...         {'name': 'remove_element', 'key': 'a.c'},
+        ...         {'name': 'remove_element', 'key': 'a.b', 'idx': 1},
+        ...     ]
+        ... )
+        >>> print(cfg.resolve_transforms())
+        _CFG_ID: a2faf743fded6c92e3fc83b994b7a065
+        <BLANKLINE>
+        a:
+          b:
+          - 3.14
+        <BLANKLINE>
+
+    Args:
+        cfg: The configuration to which the transform is applied.
+        key: The config key which is removed (or a list-element, see idx).
+        idx: If not None, specifying a specific list idx to be deleted
+             instead of the entire list.
+    """
+    if idx is None:
+        del cfg[key]
     else:
-        del cfg[target][key]
+        del cfg[key][idx]
 
 
 Config.register_transform(remove_element)
 
 
 def resolve_env(cfg: Any) -> Any:
+    """Resolve environment variables in all collections, marked through a leading $.
+
+    Examples:
+        >>> cfg = Config(
+        ...     a={'b': [3.14, '$RESOLVABLE_ENV_VARIABLE']},
+        ...     _TRANSFORM=['resolve_env']
+        ... )
+        >>> os.environ['RESOLVABLE_ENV_VARIABLE'] = 'pi'
+        >>> print(cfg.resolve_transforms())
+        _CFG_ID: a2faf743fded6c92e3fc83b994b7a065
+        <BLANKLINE>
+        a:
+          b:
+          - 3.14
+          - pi
+        <BLANKLINE>
+
+    Args:
+        cfg: The configuration, or any subcollection, to which the transform is applied.
+    """
     if is_mapping(cfg):
         for key in cfg:
             cfg[key] = resolve_env(cfg[key])
