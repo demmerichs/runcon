@@ -67,6 +67,8 @@ dev = [
     "ipython",
     "ipdb",
     "isort",
+    "mkdocs",
+    "mkdocstrings[python]",
     "phmdoctest",
     "pre-commit",
     "pytest",
